@@ -1,0 +1,5 @@
+curl -X POST https://mqwy5lemvl.execute-api.us-east-1.amazonaws.com/prod \                 
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Explain what AWS Lambda is in simple terms."
+  }'

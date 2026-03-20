@@ -1,0 +1,95 @@
+
+import json
+import boto3
+import os
+
+# Initialize Bedrock Runtime client
+bedrock_runtime = boto3.client(
+    service_name='bedrock-runtime',
+    region_name=os.environ.get('AWS_REGION', 'us-east-1')
+)
+
+def lambda_handler(event, context):
+    """
+    Lambda function to invoke Amazon Bedrock model and return response to API Gateway
+    """
+    print(event)
+    try:
+        # Extract prompt directly from event
+        input_text = json.loads(event['body'])['prompt'] 
+        history = json.loads(event['body'])['conversation_history'] 
+        
+        if not input_text:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'error': 'Missing required field: prompt'
+                })
+            }
+        
+        # Use inference profile ARN or ID instead of direct model ID
+        # For cross-region inference profile (recommended for Claude Opus 4)
+        model_id = os.environ.get(
+            'BEDROCK_MODEL_ID', 
+            'us.anthropic.claude-opus-4-20250514-v1:0'  # Cross-region inference profile
+        )
+        
+        print(input_text)
+
+        # Prepare the request payload for Claude models
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 2000,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Here is the history of the converstation" + history + "Here is the new user input" + input_text
+                }
+            ]
+        }
+        
+        # Invoke the Bedrock model using inference profile
+        response = bedrock_runtime.invoke_model(
+            modelId=model_id,
+            contentType='application/json',
+            accept='application/json',
+            body=json.dumps(request_body)
+        )
+        
+        # Parse the response
+        response_body = json.loads(response['body'].read())
+        
+        # Extract the generated text
+        generated_text = response_body['content'][0]['text']
+        
+        # Return successful response to API Gateway
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'response': generated_text,
+                'model_id': model_id
+            })
+        }
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': 'Internal server error',
+                'message': str(e)
+            })
+        }
+

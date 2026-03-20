@@ -1,0 +1,72 @@
+import json
+import boto3
+
+# Initialize Bedrock Runtime client
+bedrock_runtime = boto3.client(
+    service_name='bedrock-runtime',
+    region_name='us-east-1'
+)
+
+
+def lambda_handler(event, context):
+    """Simple Lambda function to invoke Claude Opus 4.5 model"""
+    try:
+        # Define your prompt
+        # prompt = "How many eggs does a chicken lay in 24 hour"
+        prompt = json.loads(event['body'])['prompt']
+
+        # Model configuration
+        model_id = 'global.anthropic.claude-opus-4-5-20251101-v1:0'
+
+        # Prepare the request payload
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 2048,
+            "temperature": 0.7,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+
+        # Invoke the Bedrock model
+        response = bedrock_runtime.invoke_model(
+            modelId=model_id,
+            body=json.dumps(request_body),
+            contentType='application/json',
+            accept='application/json'
+        )
+
+        # Parse the response
+        response_body = json.loads(response['body'].read())
+
+        # Extract the generated text
+        generated_text = response_body['content'][0]['text']
+
+        # Return response for API Gateway
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'response': generated_text,
+                'model_id': model_id
+            })
+        }
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
