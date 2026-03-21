@@ -1,4 +1,3 @@
-# gmu-aws-cc-serverless
 # Serverless AWS Chatbot
 
 A fully serverless AI chatbot built on AWS, powered by Amazon Bedrock (Claude). Users can send messages through a web interface and receive AI-generated responses via a serverless backend.
