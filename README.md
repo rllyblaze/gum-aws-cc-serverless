@@ -118,12 +118,6 @@ Using CloudWatch throughout this process was key — without it I would have jus
 
 ---
 
-## Note on Statefulness
-
-This chatbot is **stateless** — each message is processed independently with no memory of previous messages. This is a natural next challenge: adding conversation history would require storing context somewhere (e.g., a session store or database) and passing it along with each request to Bedrock.
-
----
-
 ## Built With
 
 - [AWS Lambda](https://aws.amazon.com/lambda/)
